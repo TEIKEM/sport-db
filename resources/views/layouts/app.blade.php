@@ -13,6 +13,8 @@
             <a href="/admin" class="text-sm text-slate-300 hover:text-white">Saisie des données</a>
             <a href="{{ route('analyse') }}" class="text-sm text-slate-300 hover:text-white">Analyse d'équipe</a>
             <a href="{{ route('pronostics') }}" class="text-sm text-slate-300 hover:text-white">Pronostics</a>
+            <a href="{{ route('post-composer') }}" class="text-sm text-slate-300 hover:text-white">Composeur de post</a>
+            <a href="{{ route('stats-excel') }}" class="text-sm text-slate-300 hover:text-white">Stats via Excel</a>
         </div>
     </nav>
 

@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Calcule les statistiques d'une équipe à partir de la vue team_matches,
@@ -102,9 +103,7 @@ class TeamStatsService
             return $set->count() ? (string) round((float) $set->avg($col), 2) : '–';
         };
 
-        return [
-            'n' => $n,
-            'categories' => [
+        $categories = [
                 [
                     'title' => 'Résumé',
                     'rows' => [
@@ -196,8 +195,43 @@ class TeamStatsService
                         ['label' => 'BTTS à l\'extérieur', 'value' => $pct($away, fn ($m) => $m->btts == 1, $nAway)],
                     ],
                 ],
-            ],
-        ];
+            ];
+
+        // Ajoute une clé stable à chaque ligne (utilisée par la liste déroulante du composeur de post)
+        foreach ($categories as $ci => $category) {
+            foreach ($category['rows'] as $ri => $row) {
+                $categories[$ci]['rows'][$ri]['key'] = Str::slug($category['title'] . ' ' . $row['label']);
+            }
+        }
+
+        return ['n' => $n, 'categories' => $categories];
+    }
+
+    /**
+     * Filtre un résultat de detailed() pour ne garder que les lignes dont la clé
+     * est dans $keys. Les catégories qui n'ont plus aucune ligne sont retirées.
+     * Renvoie une structure vide si $keys est vide (aucune sélection).
+     */
+    public static function filterByKeys(array $detail, array $keys): array
+    {
+        if ($keys === []) {
+            return ['n' => $detail['n'], 'categories' => []];
+        }
+
+        $categories = [];
+
+        foreach ($detail['categories'] as $category) {
+            $rows = array_values(array_filter(
+                $category['rows'],
+                fn ($row) => in_array($row['key'], $keys, true)
+            ));
+
+            if ($rows !== []) {
+                $categories[] = ['title' => $category['title'], 'rows' => $rows];
+            }
+        }
+
+        return ['n' => $detail['n'], 'categories' => $categories];
     }
 
     /**

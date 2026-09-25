@@ -12,30 +12,50 @@ class PostComposerController extends Controller
     {
         $team = $request->filled('team') ? Team::find($request->integer('team')) : null;
         $team2 = $request->filled('team2') ? Team::find($request->integer('team2')) : null;
+        $selectedKeys = $request->input('stats', []);
 
         $detail1 = null;
-        $detail2 = null;
+        $filtered1 = null;
+        $filtered2 = null;
+        $availableStats = collect();
         $message = null;
 
         if ($team) {
             $detail1 = TeamStatsService::detailed(TeamStatsService::matches($team->id));
 
-            $blocks = [$this->buildBlock($team->name, $detail1)];
+            // La liste des stats disponibles est toujours la même structure, peu importe l'équipe
+            $availableStats = collect($detail1['categories'])->map(fn ($c) => [
+                'title' => $c['title'],
+                'options' => collect($c['rows'])->map(fn ($r) => ['key' => $r['key'], 'label' => $r['label']]),
+            ]);
+
+            $filtered1 = TeamStatsService::filterByKeys($detail1, $selectedKeys);
 
             if ($team2) {
                 $detail2 = TeamStatsService::detailed(TeamStatsService::matches($team2->id));
-                $blocks[] = $this->buildBlock($team2->name, $detail2);
+                $filtered2 = TeamStatsService::filterByKeys($detail2, $selectedKeys);
             }
 
-            $message = $this->buildMessage($team, $team2, $blocks);
+            if ($selectedKeys !== []) {
+                $blocks = [$this->buildBlock($team->name, $filtered1)];
+
+                if ($team2) {
+                    $blocks[] = $this->buildBlock($team2->name, $filtered2);
+                }
+
+                $message = $this->buildMessage($team, $team2, $blocks);
+            }
         }
 
-        return view('post-composer', compact('team', 'team2', 'detail1', 'detail2', 'message'));
+        return view('post-composer', compact(
+            'team', 'team2', 'selectedKeys', 'availableStats',
+            'filtered1', 'filtered2', 'message'
+        ));
     }
 
     /**
-     * Construit le bloc texte d'une équipe : une ligne par stat, avec 🟢/🔴
-     * pour les pourcentages (≥ 50 % vert, < 50 % rouge) et 📌 pour les moyennes.
+     * Construit le bloc texte d'une équipe : une ligne par stat sélectionnée, avec
+     * 🟢/🔴 pour les pourcentages (≥ 50 % vert, < 50 % rouge) et 📌 pour les moyennes.
      */
     private function buildBlock(string $teamName, array $detail): string
     {

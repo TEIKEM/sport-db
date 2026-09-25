@@ -64,12 +64,10 @@ class StatsExcelController extends Controller
             return back()->with('error', 'Aucun match sans stats pour cette sélection.');
         }
 
-        $headers = ['fixture_id', 'date', 'competition', 'domicile', 'exterieur'];
+        $headers = ['fixture_id', 'date', 'journee', 'competition', 'domicile', 'score', 'exterieur'];
 
-        foreach (self::FIELDS as $suffix) {
+              foreach (self::FIELDS as $suffix) {
             $headers[] = 'dom_' . $suffix;
-        }
-        foreach (self::FIELDS as $suffix) {
             $headers[] = 'ext_' . $suffix;
         }
 
@@ -78,13 +76,19 @@ class StatsExcelController extends Controller
         $sheet->setTitle('Stats à remplir');
         $sheet->fromArray($headers, null, 'A1');
 
-        $row = 2;
+                $row = 2;
         foreach ($fixtures as $fixture) {
+            $score = ($fixture->home_score !== null && $fixture->away_score !== null)
+                ? $fixture->home_score . ' - ' . $fixture->away_score
+                : '';
+
             $sheet->fromArray([
                 $fixture->id,
                 Carbon::parse($fixture->kickoff_at)->format('d/m/Y'),
+                $fixture->matchday ? 'J' . $fixture->matchday : '',
                 $fixture->league->name,
                 $fixture->homeTeam->name,
+                $score,
                 $fixture->awayTeam->name,
             ], null, "A{$row}");
             $row++;
@@ -96,7 +100,7 @@ class StatsExcelController extends Controller
         $sheet->getStyle("A1:{$lastCol}1")->getFill()
             ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E2F3');
         $sheet->getStyle("A1:A{$row}")->getFont()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF999999'));
-        $sheet->freezePane('F2');
+                $sheet->freezePane('H2');
 
         foreach (range('A', $lastCol) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);

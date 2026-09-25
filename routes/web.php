@@ -15,7 +15,9 @@ Route::get('/api/teams/search', [TeamAnalysisController::class, 'search'])->name
 Route::get('/pronostics', [PronosticsController::class, 'index'])->name('pronostics');
 Route::get('/composeur', [PostComposerController::class, 'index'])->name('post-composer');
 use App\Http\Controllers\StatsExcelController;
+use App\Http\Controllers\StatsQualityController;
 
 Route::get('/stats-excel', [StatsExcelController::class, 'index'])->name('stats-excel');
 Route::get('/stats-excel/export', [StatsExcelController::class, 'export'])->name('stats-excel.export');
 Route::post('/stats-excel/import', [StatsExcelController::class, 'import'])->name('stats-excel.import');
+Route::get('/stats-qualite', [StatsQualityController::class, 'index'])->name('stats-quality');
